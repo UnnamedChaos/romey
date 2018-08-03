@@ -1,33 +1,71 @@
 package sample;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.stage.Stage;
 import model.Brick;
 import model.BruteNode;
 import model.Move;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 class KI {
 
+    public static int nodes;
+
+    public static void process(List<Brick> hand, List<List<Brick>> table) {
+        if (isBoardValid(table)) {
+
+        }
+    }
 
     public static void process2(List<Brick> hand, List<List<Brick>> table) {
         if (isBoardValid(table)) {
+            nodes = 0;
             BruteNode start = new BruteNode();
             start.setLeft(getAll(hand, table));
             start = recBrute(start);
             List<BruteNode> tableGone = new ArrayList<>();
             recTableBrute(table, hand, tableGone, start);
-            BruteNode bestHand = null;
-            for (BruteNode node : tableGone) {
-                if (bestHand == null || node.getBestMove().getCount() < bestHand.getBestMove().getCount()) {
-                    bestHand = node;
-                }
+            BruteNode bestHand = getBestHand(tableGone);
+            System.out.println(bestHand);
+            //openTreeWindow(table, hand, start);
+            System.out.println(nodes);
+        }
+    }
+
+    private static BruteNode getBestHand(List<BruteNode> tableGone) {
+        BruteNode bestHand = null;
+        for (BruteNode node : tableGone) {
+            if (bestHand == null || node.getBestMove().getCount() < bestHand.getBestMove().getCount()) {
+                bestHand = node;
             }
-            System.out.println(bestHand.getBestMove().getNode().toString());
+        }
+        return bestHand;
+    }
+
+    private static void openTreeWindow(List<List<Brick>> table, List<Brick> hand, BruteNode startNode) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader();
+            fxmlLoader.setLocation(Controller.class.getResource("tree.fxml"));
+            Scene scene = new Scene(fxmlLoader.load(), 1000, 1000);
+            Stage stage = new Stage();
+            stage.setTitle("Result TreeController");
+            stage.setScene(scene);
+            stage.show();
+            TreeController treeController = fxmlLoader.getController();
+            treeController.setBlocks(table);
+            treeController.setHand(hand);
+            treeController.setStartNode(startNode);
+            treeController.process();
+        } catch (IOException e) {
+            System.err.println("Window cannot open");
         }
     }
 
@@ -63,37 +101,41 @@ class KI {
     }
 
     private static BruteNode recBrute(BruteNode parent) {
-        for (Brick l : parent.getLeft()) {
-            List<Brick> remaining = new ArrayList<>(parent.getLeft());
-            remaining.remove(l);
-            BruteNode newBrute = getNewBrute(parent, remaining);
-            List<Brick> posMatch = new ArrayList<>(newBrute.getBricks());
-            posMatch.add(l);
-            if (Logic.isValid(posMatch)) {
-                newBrute.getBlocks().add(posMatch);
-                newBrute.setBricks(new ArrayList<>());
-                parent.getLeafs().add(recBrute(newBrute));
-
-            } else {
-                boolean matched = false;
-                for (List<Brick> matches : parent.getBlocks()) {
-                    List<Brick> posBlockMatch = new ArrayList<>(matches);
-                    posBlockMatch.add(l);
-                    if (Logic.isValid(posBlockMatch)) {
-                        BruteNode getMatchNode = getNewBrute(parent, remaining);
-                        getMatchNode.getBlocks().stream().filter(bricks -> bricks.containsAll(matches)).findFirst().get()
-                                .add(l);
-                        if (remaining.size() > 0) {
-                            parent.getLeafs().add(recBrute(getMatchNode));
-                        } else {
-                            parent.getLeafs().add(getMatchNode);
-                        }
-                        matched = true;
-                    }
-                }
-                if (! matched) {
-                    newBrute.getBricks().add(l);
+        if (true) {
+            for (Brick l : parent.getLeft()) {
+                List<Brick> remaining = new ArrayList<>(parent.getLeft());
+                remaining.remove(l);
+                BruteNode newBrute = getNewBrute(parent, remaining);
+                newBrute.setPlayed(l);
+                List<Brick> posMatch = new ArrayList<>(newBrute.getBricks());
+                posMatch.add(l);
+                if (Logic.isValid(posMatch)) {
+                    newBrute.getBlocks().add(posMatch);
+                    newBrute.setBricks(new ArrayList<>());
                     parent.getLeafs().add(recBrute(newBrute));
+
+                } else {
+                    boolean matched = false;
+                    for (List<Brick> matches : parent.getBlocks()) {
+                        List<Brick> posBlockMatch = new ArrayList<>(matches);
+                        posBlockMatch.add(l);
+                        if (Logic.isValid(posBlockMatch)) {
+                            BruteNode getMatchNode = getNewBrute(parent, remaining);
+                            getMatchNode.setPlayed(l);
+                            getMatchNode.getBlocks().stream().filter(bricks -> bricks.containsAll(matches)).findFirst().get()
+                                    .add(l);
+                            parent.getLeafs().add(recBrute(getMatchNode));
+                            /**if (remaining.size() > 0) {
+                             } else {
+                             parent.getLeafs().add(getMatchNode);
+                             }**/
+                            matched = true;
+                        }
+                    }
+                    if (! matched) {
+                        newBrute.getBricks().add(l);
+                        parent.getLeafs().add(recBrute(newBrute));
+                    }
                 }
             }
         }
@@ -102,6 +144,8 @@ class KI {
 
     private static BruteNode getNewBrute(BruteNode parent, List<Brick> remaining) {
         BruteNode newBrute = new BruteNode();
+        KI.nodes++;
+        System.out.println(KI.nodes + "");
         newBrute.setLeft(remaining);
         newBrute.setParent(parent);
         for (List<Brick> block : parent.getBlocks()) {

@@ -47,8 +47,20 @@ public class Controller {
         handContainer.setCellFactory(list -> new BrickCell()
         );
         ObservableList<Brick> oBricks = FXCollections.observableArrayList(new ArrayList<>());
+        oBricks.add(BrickFactory.generateBrick("4", BrickColor.BLACK).get());
+        oBricks.add(BrickFactory.generateBrick("1", BrickColor.RED).get());
+        oBricks.add(BrickFactory.generateBrick("1", BrickColor.GREEN).get());
+
         handContainer.setItems(oBricks);
+
+        //sampledata
+        List<Brick> bricks = new ArrayList<>();
+        bricks.add(BrickFactory.generateBrick("1", BrickColor.BLACK).get());
+        bricks.add(BrickFactory.generateBrick("2", BrickColor.BLACK).get());
+        bricks.add(BrickFactory.generateBrick("3", BrickColor.BLACK).get());
+        generateTableBlock(bricks);
     }
+
 
     @FXML
     public void addBlackBlock(ActionEvent event) {
@@ -161,12 +173,17 @@ public class Controller {
 
     @FXML
     private void process() {
+        List<List<Brick>> list = getTableBlocks();
+        KI.process2(handContainer.getItems(), list);
+    }
+
+    private List<List<Brick>> getTableBlocks() {
         List<List<Brick>> list = new ArrayList<>();
         table.getChildren().forEach(node -> {
             ListView<Brick> l = (ListView) node.lookup("#block");
             list.add(l.getItems());
         });
-        KI.process2(handContainer.getItems(), list);
+        return list;
     }
 
     private ListView<Brick> generateBlock() {

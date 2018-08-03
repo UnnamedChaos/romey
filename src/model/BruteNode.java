@@ -10,7 +10,15 @@ public class BruteNode {
     private List<BruteNode> leafs = new ArrayList<>();
     private BruteNode parent;
     private Move bestMove;
+    private Brick played;
 
+    public Brick getPlayed() {
+        return played;
+    }
+
+    public void setPlayed(Brick played) {
+        this.played = played;
+    }
 
     public Move getBestMove() {
         return bestMove;
