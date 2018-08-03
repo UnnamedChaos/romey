@@ -7,14 +7,17 @@ public class BruteNode {
     private List<Brick> bricks = new ArrayList<>();
     private List<Brick> left;
     private List<List<Brick>> blocks = new ArrayList<>();
-    private int lowestHandCount;
+    private List<BruteNode> leafs = new ArrayList<>();
+    private BruteNode parent;
+    private Move bestMove;
 
-    public int getLowestHandCount() {
-        return lowestHandCount;
+
+    public Move getBestMove() {
+        return bestMove;
     }
 
-    public void setLowestHandCount(int lowestHandCount) {
-        this.lowestHandCount = lowestHandCount;
+    public void setBestMove(Move bestMove) {
+        this.bestMove = bestMove;
     }
 
     public List<List<Brick>> getBlocks() {
@@ -25,8 +28,6 @@ public class BruteNode {
         this.blocks = blocks;
     }
 
-    private List<BruteNode> leafs = new ArrayList<>();
-    private BruteNode parent;
 
     public List<Brick> getBricks() {
         return bricks;
@@ -58,5 +59,14 @@ public class BruteNode {
 
     public void setParent(BruteNode parent) {
         this.parent = parent;
+    }
+
+    @Override
+    public String toString() {
+        String s = this.hashCode() + "\n";
+        for (List<Brick> block : blocks) {
+            s += "\t" + block.toString() + " \n";
+        }
+        return s;
     }
 }

@@ -1,25 +1,21 @@
 package sample;
 
 import javafx.css.PseudoClass;
-import javafx.geometry.Insets;
-import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import model.BlockSplitButton;
 import model.Brick;
 import model.BrickColor;
 
-public class BrickCell extends ListCell<Brick> {
+class BrickCell extends ListCell<Brick> {
     private PseudoClass YELLOW = PseudoClass.getPseudoClass("yellow");
+
     @Override
     public void updateItem(Brick brick, boolean empty) {
         super.updateItem(brick, empty);
-        if(brick != null) {
+        if (brick != null) {
 
             if (brick != null) {
                 Rectangle rect = new Rectangle(30, 30);
@@ -33,8 +29,7 @@ public class BrickCell extends ListCell<Brick> {
                 stack.getChildren().addAll(rect, text);
                 setGraphic(stack);
             }
-        }
-        else{
+        } else {
             this.setGraphic(null);
             this.setTextFill(Color.WHITE);
             this.setText("");

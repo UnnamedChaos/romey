@@ -3,7 +3,7 @@ package model;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BlockOption {
+class BlockOption {
     private Brick brick;
     private List<List<Brick>> option = new ArrayList<>();
 

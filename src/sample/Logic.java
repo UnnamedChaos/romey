@@ -12,12 +12,12 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-public class Logic {
+class Logic {
     public static boolean isValid(List<Brick> list) {
-        return (isAscending(list) && isMin(list) && isColorCorrect(list)) || isMin(list) && isRainbow(list) && isMax(list);
+        return isMin(list) && (isColorCorrect(list) && isAscending(list) || isMax(list) && isRainbow(list));
     }
 
-    public static boolean isRainbow(List<Brick> list) {
+    private static boolean isRainbow(List<Brick> list) {
         if (list.size() > 0) {
             int rainBowValue = - 1;
             HashSet<BrickColor> colors = new HashSet<>();
@@ -37,7 +37,7 @@ public class Logic {
         return false;
     }
 
-    public static boolean isMax(List<Brick> list) {
+    private static boolean isMax(List<Brick> list) {
         return list.size() <= 4;
     }
 
@@ -77,7 +77,7 @@ public class Logic {
     }
 
     @Test
-    public void testIsValidRainbow() {
+    void testIsValidRainbow() {
         List<Brick> list = new ArrayList<>();
         list.add(BrickFactory.generateBrick("1", BrickColor.BLACK).get());
         list.add(BrickFactory.generateBrick("1", BrickColor.RED).get());
@@ -88,7 +88,7 @@ public class Logic {
     }
 
     @Test
-    public void testDoubleColorRainbow() {
+    void testDoubleColorRainbow() {
         List<Brick> list = new ArrayList<>();
         list.add(BrickFactory.generateBrick("1", BrickColor.BLACK).get());
         list.add(BrickFactory.generateBrick("1", BrickColor.RED).get());
@@ -97,7 +97,7 @@ public class Logic {
     }
 
     @Test
-    public void testMaxRainbow() {
+    void testMaxRainbow() {
         List<Brick> list = new ArrayList<>();
         list.add(BrickFactory.generateBrick("1", BrickColor.BLACK).get());
         list.add(BrickFactory.generateBrick("1", BrickColor.RED).get());
@@ -108,7 +108,7 @@ public class Logic {
     }
 
     @Test
-    public void testEnd() {
+    void testEnd() {
         List<Brick> list = new ArrayList<>();
         list.add(BrickFactory.generateBrick("11", BrickColor.BLACK).get());
         list.add(BrickFactory.generateBrick("12", BrickColor.BLACK).get());
@@ -117,7 +117,7 @@ public class Logic {
     }
 
     @Test
-    public void testValueRainbow() {
+    void testValueRainbow() {
         List<Brick> list = new ArrayList<>();
         list.add(BrickFactory.generateBrick("1", BrickColor.BLACK).get());
         list.add(BrickFactory.generateBrick("2", BrickColor.RED).get());
@@ -126,7 +126,7 @@ public class Logic {
     }
 
     @Test
-    public void testIsValid() {
+    void testIsValid() {
         List<Brick> list = new ArrayList<>();
         list.add(BrickFactory.generateBrick("1", BrickColor.BLACK).get());
         list.add(BrickFactory.generateBrick("2", BrickColor.BLACK).get());
@@ -139,7 +139,6 @@ public class Logic {
         list.remove(BrickFactory.generateBrick("5", BrickColor.RED).get());
         assertTrue(isValid(list));
         list.add(BrickFactory.generateBrick("6", BrickColor.BLACK).get());
-        System.out.println(list.size());
         assertFalse(isValid(list));
         list.add(4, BrickFactory.generateBrick("5", BrickColor.BLACK).get());
         list.add(0, BrickFactory.generateBrick("13", BrickColor.BLACK).get());

@@ -5,32 +5,33 @@ import model.BrickColor;
 
 public class BrickFactory {
 
-    public static class PreBrick{
-        public Brick brick;
+    public static class PreBrick {
+        Brick brick;
 
-        public Brick setJoker(){
+        public Brick setJoker() {
             brick.setJoker(true);
             return brick;
         }
-        public Brick setJoker(boolean value){
+
+        public Brick setJoker(boolean value) {
             brick.setJoker(value);
             return brick;
         }
 
-        public Brick get(){
+        public Brick get() {
             return brick;
         }
     }
 
-    public static PreBrick generateBrick(String value, BrickColor color){
-        try{
+    public static PreBrick generateBrick(String value, BrickColor color) {
+        try {
             Brick brick = new Brick();
             brick.setValue(Integer.valueOf(value));
             brick.setColor(color);
             PreBrick pre = new PreBrick();
             pre.brick = brick;
             return pre;
-        }catch (NumberFormatException e){
+        } catch (NumberFormatException e) {
 
         }
         return null;

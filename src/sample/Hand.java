@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-public class Hand  implements ObservableList<Brick> {
+class Hand implements ObservableList<Brick> {
     @Override
     public void addListener(ListChangeListener<? super Brick> listener) {
 

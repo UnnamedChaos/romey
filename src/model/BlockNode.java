@@ -35,7 +35,6 @@ public class BlockNode {
 
     @Override
     public String toString() {
-        return "Node:" + block
-                + "\n\t Leafs: " + leafs.size() + "\n\t\t" + leafs + "\n";
+        return "Node: " + block + "\n" + leafs.size() + "\n ++++++++++++++++++\n";
     }
 }
