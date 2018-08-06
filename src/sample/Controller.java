@@ -174,7 +174,7 @@ public class Controller {
     @FXML
     private void process() {
         List<List<Brick>> list = getTableBlocks();
-        KI.process2(handContainer.getItems(), list);
+        KI.process(handContainer.getItems(), list);
     }
 
     private List<List<Brick>> getTableBlocks() {

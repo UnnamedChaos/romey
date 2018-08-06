@@ -8,10 +8,13 @@ import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 import model.Brick;
 import model.BruteNode;
+import model.Matches;
 import model.Move;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +24,74 @@ class KI {
 
     public static void process(List<Brick> hand, List<List<Brick>> table) {
         if (isBoardValid(table)) {
+            List<List<Brick>> powerSet = buildPermutations(hand, table);
+            List<Brick> allTable = getAll(Collections.emptyList(), table);
+            List<Brick> best = new ArrayList<>();
+            Matches matches = new Matches();
+            for (List<Brick> bricks : powerSet) {
+                if (bricks.size() >= 3) {
+                    Matches posBetterMatch = new Matches();
+                    List<Brick> posBest = getMatchList(posBetterMatch, bricks);
+                    if (posBest.containsAll(allTable)) {
+                        if (best.isEmpty() || best.size() < posBest.size()) {
+                            best = posBest;
+                            matches = posBetterMatch;
+                        }
+                    }
+                }
+            }
+            showNewTable(matches);
+        }
+    }
 
+    private static void showNewTable(Matches matches) {
+    }
+
+    private static List<Brick> getMatchList(Matches matches, List<Brick> bricks) {
+        int offset = 0;
+        int length = 3;
+        List<Brick> posMatch = new ArrayList<>(bricks.subList(offset, length));
+        if (Logic.isValid(posMatch)) {
+            while (Logic.isValid(posMatch)) {
+                length++;
+                if (length <= bricks.size()) {
+                    posMatch = bricks.subList(offset, length);
+                } else {
+                    break;
+                }
+            }
+            if (! Logic.isValid(posMatch)) {
+                posMatch = posMatch.subList(0, posMatch.size() - 1);
+            }
+            matches.getMatches().add(posMatch);
+            List<Brick> returnList = new ArrayList<>(posMatch);
+            if (bricks.size() - posMatch.size() >= 3) {
+                returnList.addAll(getMatchList(matches, bricks.subList(length - 1, bricks.size())));
+            }
+            return returnList;
+        }
+        return Collections.emptyList();
+    }
+
+
+    private static List<List<Brick>> buildPermutations(List<Brick> hand, List<List<Brick>> table) {
+        List<List<Brick>> powerSet = new LinkedList<List<Brick>>();
+        List<Brick> bricks = getAll(hand, table);
+        iterate_combinations(powerSet, new ArrayList<>(), bricks, bricks.size());
+        return powerSet;
+    }
+
+    public static void iterate_combinations(List<List<Brick>> powerSet, List<Brick> combination, List<Brick> bricks,
+            int size) {
+        for (Brick b : bricks) {
+            List<Brick> posComb = new ArrayList<>(combination);
+            posComb.add(b);
+            List<Brick> left = new ArrayList<>(bricks);
+            left.remove(b);
+            iterate_combinations(powerSet, posComb, left, size);
+        }
+        if (combination.size() >= size) {
+            powerSet.add(combination);
         }
     }
 
