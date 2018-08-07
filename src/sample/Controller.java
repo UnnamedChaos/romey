@@ -16,6 +16,7 @@ import model.BlockAddButton;
 import model.BlockRemoveButton;
 import model.Brick;
 import model.BrickColor;
+import model.Matches;
 import model.RainBowButton;
 
 import java.util.ArrayList;
@@ -174,7 +175,17 @@ public class Controller {
     @FXML
     private void process() {
         List<List<Brick>> list = getTableBlocks();
-        KI.process(handContainer.getItems(), list);
+        KI.process(handContainer.getItems(), list, this);
+    }
+
+    public void updateTable(Matches matches) {
+        if (matches != null) {
+            table.getChildren().removeAll(table.getChildren());
+            for (List<Brick> match : matches.getMatches()) {
+                generateTableBlock(match);
+            }
+            handContainer.setItems(FXCollections.observableArrayList(matches.getHandLeft()));
+        }
     }
 
     private List<List<Brick>> getTableBlocks() {

@@ -8,14 +8,14 @@ public class BrickFactory {
     public static class PreBrick {
         Brick brick;
 
-        public Brick setJoker() {
+        public PreBrick setJoker() {
             brick.setJoker(true);
-            return brick;
+            return this;
         }
 
-        public Brick setJoker(boolean value) {
+        public PreBrick setJoker(boolean value) {
             brick.setJoker(value);
-            return brick;
+            return this;
         }
 
         public Brick get() {
@@ -26,7 +26,14 @@ public class BrickFactory {
     public static PreBrick generateBrick(String value, BrickColor color) {
         try {
             Brick brick = new Brick();
-            brick.setValue(Integer.valueOf(value));
+            int val = Integer.valueOf(value);
+            if (val > 13) {
+                val = val % 13;
+            }
+            if (val <= 0) {
+                val = 13 + val;
+            }
+            brick.setValue(val);
             brick.setColor(color);
             PreBrick pre = new PreBrick();
             pre.brick = brick;

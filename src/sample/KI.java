@@ -1,5 +1,6 @@
 package sample;
 
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -9,42 +10,74 @@ import javafx.stage.Stage;
 import model.Brick;
 import model.BruteNode;
 import model.Matches;
-import model.Move;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
 class KI {
 
-    public static int nodes;
-
-    public static void process(List<Brick> hand, List<List<Brick>> table) {
+    public static void process(List<Brick> hand, List<List<Brick>> table, Controller controller) {
         if (isBoardValid(table)) {
-            List<List<Brick>> powerSet = buildPermutations(hand, table);
-            List<Brick> allTable = getAll(Collections.emptyList(), table);
-            List<Brick> best = new ArrayList<>();
-            Matches matches = new Matches();
-            for (List<Brick> bricks : powerSet) {
-                if (bricks.size() >= 3) {
-                    Matches posBetterMatch = new Matches();
-                    List<Brick> posBest = getMatchList(posBetterMatch, bricks);
-                    if (posBest.containsAll(allTable)) {
-                        if (best.isEmpty() || best.size() < posBest.size()) {
-                            best = posBest;
-                            matches = posBetterMatch;
+
+            Logic.isSimpleMatchHand(hand, table);
+
+
+            List<Brick> tableAll = getAll(Collections.emptyList(), table);
+            List<Brick> playAbleHand = getPlayableHand(hand, tableAll);
+            List<Brick> notPlayableHand = new ArrayList<>(hand);
+            notPlayableHand.removeAll(playAbleHand);
+
+            int threadCount = 10;
+            List<Thread> threads = new ArrayList<>();
+            for (int th = 0; th < threadCount; th++) {
+                Thread t = new Thread(() -> {
+                    List<Brick> shuffledTable = new ArrayList<>(tableAll);
+                    Collections.shuffle(shuffledTable);
+                    Matches matches = buildPermutations(playAbleHand, shuffledTable);
+                    if (matches != null) {
+                        System.out.println(Thread.currentThread().toString() + " found best solution.");
+                        matches.getHandLeft().addAll(notPlayableHand);
+                        controller.updateTable(matches);
+                        for (Thread otherThread : threads) {
+                            if (otherThread != Thread.currentThread()) {
+                                otherThread.interrupt();
+                            }
                         }
                     }
-                }
+                });
+                threads.add(t);
+                Platform.runLater(t);
+                System.out.println("Started thread " + t.getId());
             }
-            showNewTable(matches);
         }
     }
 
-    private static void showNewTable(Matches matches) {
+    private static List<Brick> getPlayableHand(List<Brick> hand, List<Brick> table) {
+        List<Brick> playableHand = new ArrayList<>();
+        for (Brick b : hand) {
+            List<Brick> subBrickHand = new ArrayList<>(hand);
+            subBrickHand.remove(b);
+            List<Brick> tableHandAll = getAllSimple(subBrickHand, table);
+            if (Logic.isHandBrickColorPlayable(b, tableHandAll) || Logic.isHandBrickAscendingPlayable(b, tableHandAll)) {
+                playableHand.add(b);
+            } else {
+                System.err.println(b.getValue() + " " + b.getColor() + " is not playable.");
+            }
+        }
+        return playableHand;
+    }
+
+    private static void showNewTable(Matches matches) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader();
+        fxmlLoader.setLocation(Controller.class.getResource("nextMove.fxml"));
+        Scene scene = new Scene(fxmlLoader.load(), 1000, 1000);
+        Stage stage = new Stage();
+        stage.setTitle("Next Move");
+        stage.setScene(scene);
+        stage.show();
     }
 
     private static List<Brick> getMatchList(Matches matches, List<Brick> bricks) {
@@ -74,51 +107,64 @@ class KI {
     }
 
 
-    private static List<List<Brick>> buildPermutations(List<Brick> hand, List<List<Brick>> table) {
-        List<List<Brick>> powerSet = new LinkedList<List<Brick>>();
-        List<Brick> bricks = getAll(hand, table);
-        iterate_combinations(powerSet, new ArrayList<>(), bricks, bricks.size());
-        return powerSet;
+    private static Matches buildPermutations(List<Brick> hand, List<Brick> table) {
+        List<Brick> bricks = getAllSimple(hand, table);
+        Matches matches = null;
+        if (! hand.isEmpty()) {
+            System.out.println("Start permutations");
+            matches = iterate_combinations(new ArrayList<>(), bricks, bricks.size(), table, hand, matches, bricks.size());
+            System.out.println("Finished permutations");
+        } else {
+            System.err.println("Playable hand is empty. No need to permutate.");
+        }
+        return matches;
     }
 
-    public static void iterate_combinations(List<List<Brick>> powerSet, List<Brick> combination, List<Brick> bricks,
-            int size) {
+    public static int node = 0;
+
+    public static Matches iterate_combinations(List<Brick> combination, List<Brick> bricks,
+            int size, List<Brick> table, List<Brick> hand, Matches matches, int maxStones) {
+        if (Thread.interrupted()) {
+            System.out.println("Thread " + Thread.currentThread().toString() + " was interrupted.");
+            return null;
+        }
+        if (matches != null && maxStones == matches.getMatchSize()) {
+            return matches;
+        }
         for (Brick b : bricks) {
             List<Brick> posComb = new ArrayList<>(combination);
             posComb.add(b);
             List<Brick> left = new ArrayList<>(bricks);
             left.remove(b);
-            iterate_combinations(powerSet, posComb, left, size);
+            matches = iterate_combinations(posComb, left, size, table, hand, matches, maxStones);
         }
         if (combination.size() >= size) {
-            powerSet.add(combination);
-        }
-    }
+            Matches posBetterMatch = new Matches();
+            List<Brick> posBest = getMatchList(posBetterMatch, combination);
+            //System.out.println("N: " + KI.node + " PosS: " + posBest.size());
+            //KI.node++;
+            if (posBest.size() > table.size() && posBest.containsAll(table)) {
+                if (matches == null || matches.getMatchSize() < posBest.size()) {
+                    //Hand Left
+                    List<Brick> all = new ArrayList<>(table);
+                    all.addAll(hand);
+                    for (List<Brick> match : posBetterMatch.getMatches()) {
+                        all.removeAll(match);
+                    }
+                    posBetterMatch.getHandLeft().addAll(all);
 
-    public static void process2(List<Brick> hand, List<List<Brick>> table) {
-        if (isBoardValid(table)) {
-            nodes = 0;
-            BruteNode start = new BruteNode();
-            start.setLeft(getAll(hand, table));
-            start = recBrute(start);
-            List<BruteNode> tableGone = new ArrayList<>();
-            recTableBrute(table, hand, tableGone, start);
-            BruteNode bestHand = getBestHand(tableGone);
-            System.out.println(bestHand);
-            //openTreeWindow(table, hand, start);
-            System.out.println(nodes);
-        }
-    }
-
-    private static BruteNode getBestHand(List<BruteNode> tableGone) {
-        BruteNode bestHand = null;
-        for (BruteNode node : tableGone) {
-            if (bestHand == null || node.getBestMove().getCount() < bestHand.getBestMove().getCount()) {
-                bestHand = node;
+                    System.out.println(Thread.currentThread().getId() + " Found better solution");
+                    System.out.println(posBetterMatch.getMatches());
+                    System.out.println(posBetterMatch.getMatchSize());
+                    return posBetterMatch;
+                } else {
+                    return matches;
+                }
             }
         }
-        return bestHand;
+        return matches;
     }
+
 
     private static void openTreeWindow(List<List<Brick>> table, List<Brick> hand, BruteNode startNode) {
         try {
@@ -139,97 +185,16 @@ class KI {
         }
     }
 
-    private static void recTableBrute(List<List<Brick>> table, List<Brick> hand, List<BruteNode> tableGone,
-            BruteNode parent) {
-        List<Brick> allt = getAll(new ArrayList<>(), table);
-        for (List<Brick> block : parent.getBlocks()) {
-            allt.removeAll(block);
-        }
-        if (allt.size() <= 0) {
-            tableGone.add(parent);
-            Move bestMove = new Move();
-            bestMove.setNode(findBestMove(parent));
-            bestMove.setCount(bestMove.getNode().getLeft().size() + bestMove.getNode().getBricks().size());
-            parent.setBestMove(bestMove);
-        } else {
-            for (BruteNode leaf : parent.getLeafs()) {
-                recTableBrute(table, hand, tableGone, leaf);
-            }
-        }
-    }
-
-    private static BruteNode findBestMove(BruteNode parent) {
-        BruteNode node = parent;
-        for (BruteNode leaf : parent.getLeafs()) {
-            BruteNode bestLeafNode = findBestMove(leaf);
-            if (node.getLeft().size() + node.getBricks().size() >
-                    bestLeafNode.getLeft().size() + bestLeafNode.getBricks().size()) {
-                node = bestLeafNode;
-            }
-        }
-        return node;
-    }
-
-    private static BruteNode recBrute(BruteNode parent) {
-        if (true) {
-            for (Brick l : parent.getLeft()) {
-                List<Brick> remaining = new ArrayList<>(parent.getLeft());
-                remaining.remove(l);
-                BruteNode newBrute = getNewBrute(parent, remaining);
-                newBrute.setPlayed(l);
-                List<Brick> posMatch = new ArrayList<>(newBrute.getBricks());
-                posMatch.add(l);
-                if (Logic.isValid(posMatch)) {
-                    newBrute.getBlocks().add(posMatch);
-                    newBrute.setBricks(new ArrayList<>());
-                    parent.getLeafs().add(recBrute(newBrute));
-
-                } else {
-                    boolean matched = false;
-                    for (List<Brick> matches : parent.getBlocks()) {
-                        List<Brick> posBlockMatch = new ArrayList<>(matches);
-                        posBlockMatch.add(l);
-                        if (Logic.isValid(posBlockMatch)) {
-                            BruteNode getMatchNode = getNewBrute(parent, remaining);
-                            getMatchNode.setPlayed(l);
-                            getMatchNode.getBlocks().stream().filter(bricks -> bricks.containsAll(matches)).findFirst().get()
-                                    .add(l);
-                            parent.getLeafs().add(recBrute(getMatchNode));
-                            /**if (remaining.size() > 0) {
-                             } else {
-                             parent.getLeafs().add(getMatchNode);
-                             }**/
-                            matched = true;
-                        }
-                    }
-                    if (! matched) {
-                        newBrute.getBricks().add(l);
-                        parent.getLeafs().add(recBrute(newBrute));
-                    }
-                }
-            }
-        }
-        return parent;
-    }
-
-    private static BruteNode getNewBrute(BruteNode parent, List<Brick> remaining) {
-        BruteNode newBrute = new BruteNode();
-        KI.nodes++;
-        System.out.println(KI.nodes + "");
-        newBrute.setLeft(remaining);
-        newBrute.setParent(parent);
-        for (List<Brick> block : parent.getBlocks()) {
-            newBrute.getBlocks().add(new ArrayList<>(block));
-        }
-        newBrute.getBricks().addAll(parent.getBricks());
-        return newBrute;
-    }
-
-
     private static List<Brick> getAll(List<Brick> hand, List<List<Brick>> table) {
         List<Brick> all = new ArrayList<>();
         table.forEach(bricks -> all.addAll(bricks));
         hand.forEach(brick -> all.add(brick));
+        return all;
+    }
+
+    private static List<Brick> getAllSimple(List<Brick> hand, List<Brick> table) {
+        List<Brick> all = new ArrayList<>(hand);
+        all.addAll(table);
         return all;
     }
 
