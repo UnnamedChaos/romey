@@ -1,4 +1,4 @@
-package sample;
+package control;
 
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;

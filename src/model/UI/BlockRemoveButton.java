@@ -1,7 +1,8 @@
-package model;
+package model.UI;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import model.Brick;
 
 public class BlockRemoveButton extends Button {
     private final boolean top;

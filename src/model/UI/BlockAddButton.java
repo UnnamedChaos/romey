@@ -1,8 +1,9 @@
-package model;
+package model.UI;
 
+import control.BrickFactory;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
-import sample.BrickFactory;
+import model.Brick;
 
 public class BlockAddButton extends Button {
     private final boolean top;

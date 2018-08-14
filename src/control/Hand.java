@@ -1,4 +1,4 @@
-package sample;
+package control;
 
 import javafx.beans.InvalidationListener;
 import javafx.collections.ListChangeListener;

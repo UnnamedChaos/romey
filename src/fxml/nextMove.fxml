@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 <AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="sample.NextMoveController">
+            fx:controller="control.NextMoveController">
     <children>
         <ScrollPane prefHeight="1000.0" prefWidth="1000.0">
             <content>

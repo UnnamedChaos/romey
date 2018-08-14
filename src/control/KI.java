@@ -1,6 +1,5 @@
-package sample;
+package control;
 
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -19,10 +18,37 @@ import java.util.Optional;
 
 class KI {
 
+    public static void process2(List<Brick> hand, List<List<Brick>> table, Controller controller) {
+        if (isBoardValid(table)) {
+            processSimpleMatch(hand, table, controller);
+        }
+    }
+
+    private static void processSimpleMatch(List<Brick> hand, List<List<Brick>> table, Controller controller) {
+        boolean restart = true;
+
+        while (restart) {
+            restart = false;
+            if (! restart) {
+                restart = Logic.isPickMatchHand(hand, table);
+            }
+            if (! restart) {
+                restart = Logic.isConnectMatch(hand, table);
+            }
+            if (! restart) {
+                restart = Logic.isSplitMatch(hand, table);
+            }
+        }
+        Matches simpleMatch = new Matches();
+        simpleMatch.setHandLeft(hand);
+        simpleMatch.setMatches(table);
+        controller.updateTable(simpleMatch);
+    }
+
     public static void process(List<Brick> hand, List<List<Brick>> table, Controller controller) {
         if (isBoardValid(table)) {
 
-            Logic.isSimpleMatchHand(hand, table);
+            processSimpleMatch(hand, table, controller);
 
 
             List<Brick> tableAll = getAll(Collections.emptyList(), table);
@@ -30,28 +56,36 @@ class KI {
             List<Brick> notPlayableHand = new ArrayList<>(hand);
             notPlayableHand.removeAll(playAbleHand);
 
-            int threadCount = 10;
-            List<Thread> threads = new ArrayList<>();
-            for (int th = 0; th < threadCount; th++) {
-                Thread t = new Thread(() -> {
-                    List<Brick> shuffledTable = new ArrayList<>(tableAll);
-                    Collections.shuffle(shuffledTable);
-                    Matches matches = buildPermutations(playAbleHand, shuffledTable);
-                    if (matches != null) {
-                        System.out.println(Thread.currentThread().toString() + " found best solution.");
-                        matches.getHandLeft().addAll(notPlayableHand);
-                        controller.updateTable(matches);
-                        for (Thread otherThread : threads) {
-                            if (otherThread != Thread.currentThread()) {
-                                otherThread.interrupt();
+            if (playAbleHand.size() > 0) {
+                int threadCount = 2;
+                List<Thread> threads = new ArrayList<>();
+                for (int th = 0; th < threadCount; th++) {
+                    Thread t = new Thread(() -> {
+                        System.out.println("Started thread " + Thread.currentThread().toString());
+                        List<Brick> shuffledTable = new ArrayList<>(tableAll);
+                        Collections.shuffle(shuffledTable);
+                        Matches matches = buildPermutations(playAbleHand, shuffledTable, controller);
+                        if (matches != null) {
+                            System.out.println(Thread.currentThread().toString() + " found best solution.");
+                            matches.getHandLeft().addAll(notPlayableHand);
+                            synchronized (controller) {
+                                if (! threads.isEmpty()) {
+                                    System.out.println("Interrupt all other threads");
+                                    for (Thread otherThread : threads) {
+                                        if (otherThread != Thread.currentThread()) {
+                                            otherThread.interrupt();
+                                        }
+                                    }
+                                }
+                                threads.clear();
                             }
                         }
-                    }
-                });
-                threads.add(t);
-                Platform.runLater(t);
-                System.out.println("Started thread " + t.getId());
+                    });
+                    threads.add(t);
+                    t.start();
+                }
             }
+
         }
     }
 
@@ -107,12 +141,16 @@ class KI {
     }
 
 
-    private static Matches buildPermutations(List<Brick> hand, List<Brick> table) {
+    private static Matches buildPermutations(List<Brick> hand, List<Brick> table, Controller controller) {
         List<Brick> bricks = getAllSimple(hand, table);
         Matches matches = null;
         if (! hand.isEmpty()) {
-            System.out.println("Start permutations");
-            matches = iterate_combinations(new ArrayList<>(), bricks, bricks.size(), table, hand, matches, bricks.size());
+            long permutations = factorial(bricks.size());
+            System.out.println("Start permutations: " + permutations);
+            matches = iterate_combinations(new ArrayList<>(), bricks, table, hand, matches, bricks.size(), controller);
+            if (matches != null) {
+                controller.updateTable(matches);
+            }
             System.out.println("Finished permutations");
         } else {
             System.err.println("Playable hand is empty. No need to permutate.");
@@ -120,10 +158,35 @@ class KI {
         return matches;
     }
 
+    public static long factorial(int n) {
+        if (n > 20) {
+            throw new IllegalArgumentException(n + " is out of range");
+        }
+        return (1 > n) ? 1 : n * factorial(n - 1);
+    }
+
     public static int node = 0;
 
-    public static Matches iterate_combinations(List<Brick> combination, List<Brick> bricks,
-            int size, List<Brick> table, List<Brick> hand, Matches matches, int maxStones) {
+    public static Matches iterate_combinations(List<Brick> combination, List<Brick> bricks, List<Brick> table,
+            List<Brick> hand, Matches matches, int maxStones, Controller controller) {
+        if (Thread.interrupted()) {
+            System.out.println("Thread " + Thread.currentThread().toString() + " was interrupted.");
+            return null;
+        }
+        for (Brick b : bricks) {
+            List<Brick> posComb = new ArrayList<>(combination);
+            posComb.add(b);
+            List<Brick> left = new ArrayList<>(bricks);
+            left.remove(b);
+            matches = iterate_combinations(posComb, left, table, hand, matches, maxStones, controller);
+            if (Thread.interrupted()) {
+                System.out.println("Thread " + Thread.currentThread().toString() + " was interrupted.");
+                return null;
+            }
+            if (matches != null && maxStones == matches.getMatchSize()) {
+                break;
+            }
+        }
         if (Thread.interrupted()) {
             System.out.println("Thread " + Thread.currentThread().toString() + " was interrupted.");
             return null;
@@ -131,14 +194,7 @@ class KI {
         if (matches != null && maxStones == matches.getMatchSize()) {
             return matches;
         }
-        for (Brick b : bricks) {
-            List<Brick> posComb = new ArrayList<>(combination);
-            posComb.add(b);
-            List<Brick> left = new ArrayList<>(bricks);
-            left.remove(b);
-            matches = iterate_combinations(posComb, left, size, table, hand, matches, maxStones);
-        }
-        if (combination.size() >= size) {
+        if (combination.size() >= maxStones) {
             Matches posBetterMatch = new Matches();
             List<Brick> posBest = getMatchList(posBetterMatch, combination);
             //System.out.println("N: " + KI.node + " PosS: " + posBest.size());
@@ -153,9 +209,9 @@ class KI {
                     }
                     posBetterMatch.getHandLeft().addAll(all);
 
-                    System.out.println(Thread.currentThread().getId() + " Found better solution");
+                    System.out.println(Thread.currentThread().toString() + " Found better solution");
                     System.out.println(posBetterMatch.getMatches());
-                    System.out.println(posBetterMatch.getMatchSize());
+                    System.out.println(maxStones + " / " + posBetterMatch.getMatchSize());
                     return posBetterMatch;
                 } else {
                     return matches;

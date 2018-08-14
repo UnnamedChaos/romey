@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<AnchorPane prefHeight="100.0" prefWidth="200.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="control.Options">
+    <children>
+        <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+            <children>
+                <Button fx:id="split" mnemonicParsing="false" prefWidth="50.0" text="Split"/>
+                <Button fx:id="joker" mnemonicParsing="false" prefWidth="50.0" text="Joker"/>
+            </children>
+        </HBox>
+    </children>
+</AnchorPane>

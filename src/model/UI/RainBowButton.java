@@ -1,9 +1,11 @@
-package model;
+package model.UI;
 
+import control.BrickFactory;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.paint.Color;
-import sample.BrickFactory;
+import model.Brick;
+import model.BrickColor;
 
 public class RainBowButton extends Button {
     private final BrickColor color;
@@ -39,5 +41,13 @@ public class RainBowButton extends Button {
                 }
             }
         });
+    }
+
+    public Brick getBrick() {
+        return brick;
+    }
+
+    public void setBrick(Brick brick) {
+        this.brick = brick;
     }
 }

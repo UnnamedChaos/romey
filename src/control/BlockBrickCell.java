@@ -1,12 +1,12 @@
-package sample;
+package control;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.ListCell;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import model.BlockSplitButton;
 import model.Brick;
+import model.UI.BlockSplitButton;
 
 class BlockBrickCell extends ListCell<Brick> {
 

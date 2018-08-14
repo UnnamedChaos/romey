@@ -1,13 +1,14 @@
-package model;
+package model.UI;
 
 import com.sun.istack.internal.NotNull;
 
+import control.Controller;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListView;
-import sample.Controller;
+import model.Brick;
 
 import java.util.ArrayList;
 import java.util.List;

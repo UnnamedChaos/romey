@@ -1,4 +1,4 @@
-package sample;
+package control;
 
 import model.Brick;
 import model.BrickColor;

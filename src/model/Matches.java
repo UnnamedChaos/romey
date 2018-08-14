@@ -7,6 +7,7 @@ public class Matches {
     List<List<Brick>> matches = new ArrayList<>();
     List<Brick> handLeft = new ArrayList<>();
 
+
     public List<List<Brick>> getMatches() {
         return matches;
     }
@@ -30,4 +31,5 @@ public class Matches {
         }
         return matchsize;
     }
+
 }

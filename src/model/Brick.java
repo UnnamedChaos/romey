@@ -58,4 +58,22 @@ public class Brick {
                 ", color=" + color +
                 '}';
     }
+
+    public boolean isInterestedIn(Brick other) {
+        if (other.isJoker()) {
+            return true;
+        }
+        int lower = this.getValue() - 1;
+        if (lower == 0) {
+            lower = 13;
+        }
+        if (this.getColor().equals(other.getColor()) &&
+                (this.getValue() % 13 + 1 == other.getValue() || lower == other.getValue())) {
+            return true;
+        }
+        if (this.getValue() == other.getValue() && this.getColor() != other.getColor()) {
+            return true;
+        }
+        return false;
+    }
 }
